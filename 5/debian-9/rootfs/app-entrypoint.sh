@@ -22,37 +22,37 @@ wait_for_db() {
   local db_port="${DB_PORT:-3306}"
   local db_address=$(getent hosts "$db_host" | awk '{ print $1 }')
   counter=0
-  log "Connecting to mariadb at $db_address"
+  log "Conectando a mariadb en $db_address"
   while ! curl --silent "$db_address:$db_port" >/dev/null; do
     counter=$((counter+1))
     if [ $counter == 30 ]; then
-      log "Error: Couldn't connect to mariadb."
+      log "Error: No se pudo conectar a mariadb."
       exit 1
     fi
-    log "Trying to connect to mariadb at $db_address. Attempt $counter."
+    log "Intentando conectar a mariadb en $db_address. Intento nro. $counter."
     sleep 5
   done
 }
 
 setup_db() {
-  log "Configuring the database"
+  log "Configurando la base de datos"
   sed -i "s/utf8mb4/utf8/g" /app/config/database.php
   php artisan migrate --force
 }
 
 if [ "${1}" == "php" -a "$2" == "artisan" -a "$3" == "serve" ]; then
   if ! app_present; then
-    log "Creating laravel application"
+    log "Creando una aplicación laravel"
     cp -a /tmp/app/. /app/
   fi
 
-  log "Installing/Updating Laravel dependencies (composer)"
+  log "Instalando/Actualizando las dependencias de Laravel (composer)"
   if ! vendor_present; then
     composer install
-    log "Dependencies installed"
+    log "Dependencias Instaladas"
   else
     composer update
-    log "Dependencies updated"
+    log "Dependencias actualizadas"
   fi
 
   wait_for_db
@@ -60,15 +60,16 @@ if [ "${1}" == "php" -a "$2" == "artisan" -a "$3" == "serve" ]; then
   if ! fresh_container; then
     echo "#########################################################################"
     echo "                                                                         "
-    echo " App initialization skipped:                                             "
-    echo " Delete the file $INIT_SEM and restart the container to reinitialize     "
-    echo " You can alternatively run specific commands using docker-compose exec   "
-    echo " e.g docker-compose exec myapp php artisan make:console FooCommand       "
+    echo " La inicialización de la app se saltea:                                  "
+    echo " Elimine el archivo $INIT_SEM y reinicie el contenedor para reinicializar"
+    echo " Usted puede, alternativamente, correr cualquier comando específico      "
+    echo " utilizando docker-compose exec:                                         "
+    echo " ej. docker-compose exec myapp php artisan make:console FooCommand       "
     echo "                                                                         "
     echo "#########################################################################"
   else
     setup_db
-    log "Initialization finished"
+    log "La inicialización finalizó"
     touch $INIT_SEM
   fi
 fi
